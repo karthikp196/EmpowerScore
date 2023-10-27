@@ -1,0 +1,38 @@
+image: node:16
+
+pipelines:
+  branches:
+    production:
+      - step:
+          name: 'Running Test'
+          caches:
+            - node
+          script:
+            - npm install
+      - step:
+          name: 'Create artifact'
+          script:
+            - git archive --format=tar.gz main -o application.tar.gz
+
+          artifacts:
+            - application.tar.gz
+      - step:
+          name: 'Deploy to production'
+          deployment: production
+          caches:
+            - node
+          script:
+            - echo "Deploying..."
+            - pipe: atlassian/heroku-deploy:2.0.0
+              variables:
+                HEROKU_API_KEY: $HEROKU_API_KEY
+                HEROKU_APP_NAME: $HEROKU_APP_NAME
+                ZIP_FILE: application.tar.gz
+    default:
+      - step:
+          name: 'Running Test'
+          caches:
+            - node
+          script:
+            - npm install
+            - npm run test
